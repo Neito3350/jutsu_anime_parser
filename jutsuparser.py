@@ -4,11 +4,20 @@ from tqdm import tqdm
 from os import makedirs
 from os.path import isfile
 from re import sub
-from config import HEADERS, OUT_DIR
+from fake_useragent import UserAgent
+
+ua = UserAgent()
+
+HEADERS = {
+    "User-Agent":ua.random,
+    "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8"
+}
+
+OUT_DIR = "./downloaded_anime/"
 
 class jutsuParser():
     def __init__(self):
-        print(HEADERS["User-Agent"])
+        pass
 
     def get_all_episodes(self, anime_url:str):
         """функция парсит все ссылки эпизоды аниме"""
@@ -25,7 +34,6 @@ class jutsuParser():
             episodes.append("https://jut.su{}".format(link["href"]))
 
         return episodes
-
 
     def get_and_download(self, link_from_episode:str, quality:str):
         """функция парсит название эпизода, название аниме и прямую ссылку на видео и возвращает результат в видео словаря"""
@@ -64,7 +72,6 @@ class jutsuParser():
             print("Загрузка завершена!")
         else:
             print("Файл уже существует!")
-
 
     def cli(self):
         """функция реализует консольный интерфейс для скрипта"""
@@ -128,7 +135,7 @@ class jutsuParser():
             case _:
                 print("Неверный выбор!")
 
+
 if __name__ == "__main__":
     jp = jutsuParser()
     jp.cli()
-    # print(len(jp.get_all_episodes("https://jut.su/onepunchman/")))
