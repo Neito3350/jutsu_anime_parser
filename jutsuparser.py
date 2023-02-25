@@ -19,7 +19,7 @@ class jutsuParser():
     def __init__(self):
         pass
 
-    def get_all_episodes(self, anime_url:str):
+    def get_all_episodes(self, anime_url:str, parse_black_buttons=True):
         """функция парсит все ссылки эпизоды аниме"""
         episodes = []
 
@@ -27,7 +27,10 @@ class jutsuParser():
         soup = BeautifulSoup(r.text, "lxml")
 
         # парсинг ссылок на эпизоды
-        links = soup.find_all("a", class_={"short-btn green video the_hildi", "short-btn black video the_hildi"}, attrs="href")
+        if parse_black_buttons:
+            links = soup.find_all("a", class_={"short-btn green video the_hildi", "short-btn black video the_hildi"}, attrs="href")
+        else:
+            links = soup.find_all("a", class_={"short-btn green video the_hildi"}, attrs="href")
 
         # добавление полученных ссылок в список
         for link in links:
@@ -75,7 +78,8 @@ class jutsuParser():
 
     def cli(self):
         """функция реализует консольный интерфейс для скрипта"""
-        episode_or_url = input("Выберите режим загрузки [1 - эпизод, 2 - сезон/аниме целиком]: ").lower().strip()
+
+        episode_or_url = input("Выберите режим загрузки [1 - эпизод, 2 - аниме целиком]: ").lower().strip()
         
         match episode_or_url:
             case "1":
@@ -89,16 +93,16 @@ class jutsuParser():
 
             case "2":
                 try:
-                    forseason_url = input("Ссылка на сезон/аниме целиком: ").strip()
+                    forseason_url = input("Ссылка на аниме: ").strip()
                     video_quality = input("Качество [360, 480, 720, 1080]: ").lower().strip()
                 except:
                     print("Неверно указана ссылка или качество!")
                 
-                all_season_or_inout_episode = input("Выберите режим загрузки [1 - весь сезон, 2 - интервалом]: ").lower().strip()
+                all_season_or_inout_episode = input("Выберите режим загрузки [1 - все серии, 2 - интервалом]: ").lower().strip()
                 
                 match all_season_or_inout_episode:
                     case "1":
-                        print("Загрузка сезона/аниме полностью.")
+                        print("Загрузка аниме полностью.")
 
                         all_episodes = self.get_all_episodes(forseason_url)
                         print("Количество серий {}".format(len(all_episodes)))
@@ -111,25 +115,32 @@ class jutsuParser():
                         print("Загрузка сезона завершена!")
                     
                     case "2":
+                        black_buttons_switch = input("Парсить серии помечанные серой кнопкой ? [1 - да; 0 - нет]: ")
+
+                        if black_buttons_switch == "1":
+                            all_episodes = self.get_all_episodes(forseason_url)
+                        elif black_buttons_switch == "0":
+                            all_episodes = self.get_all_episodes(forseason_url, parse_black_buttons=False)
+                            print("Парсинг серий, помечанных серой кнопкой ОТКЛЮЧЕН!")
+                        else:
+                            print("Неверное значение флага! УСТАНОВЛЕНО ЗНАЧЕНИЕ ПО-УМОЛЧАНИЮ!")
+                            all_episodes = self.get_all_episodes(forseason_url)
+
                         print("Загрузка интервалом.")
 
-                        all_episodes = self.get_all_episodes(forseason_url)
                         print("Количество серий {}".format(len(all_episodes)))
 
-                        in_episode = input("С какой серии начать загрузку: ").lower().strip()
-                        out_episode = input("По какую серию загрузить: ").lower().strip() 
+                        raw_interval = input("Введите с какой по какую серию загружать через запятую (например: 3,7): ").strip().split(",")
+                        interval = [int(x) for x in raw_interval]
 
-                        if in_episode.isdigit() and out_episode.isdigit():
-                            print("Интервал загрузки: с {} серии, по {} серию.".format(in_episode, out_episode))
+                        print("Интервал загрузки: с {} серии, по {} серию.".format(interval[0], interval[1]))
 
-                            print("Загрузка интервала началась! [чтобы остановить загрузку нажмите Ctrl + C]")
+                        print("Загрузка интервала началась! [чтобы остановить загрузку нажмите Ctrl + C]")
 
-                            for episode in all_episodes[int(in_episode)-1:int(out_episode)]:
-                                self.get_and_download(episode, video_quality)
+                        for episode in all_episodes[int(interval[0])-1:int(interval[1])]:
+                            self.get_and_download(episode, video_quality)
 
-                            print("Загрузка интервала завершена!")
-                        else:
-                            print("Нужно число, а не символ!")
+                        print("Загрузка интервала завершена!")
                     case _:
                         print("Неверный выбор!")
             case _:
